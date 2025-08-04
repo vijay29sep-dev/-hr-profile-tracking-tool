@@ -3,6 +3,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
+const path = require('path');
 require('dotenv').config();
 
 const { db, initializeDatabase, createDefaultUser } = require('./database');
@@ -14,6 +15,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'hr-tracker-secret-key';
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from React build in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/build')));
+}
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
@@ -395,6 +401,13 @@ app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
     });
   });
 });
+
+// Serve React app for all other routes in production
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
+}
 
 // Initialize database and start server
 const startServer = async () => {
